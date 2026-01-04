@@ -90,6 +90,31 @@ export default function DashboardPage() {
       }
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+  
+    function handleVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        console.log('👀 App voltou para o foco — recarregando visitas');
+        loadVisitas(user.id);
+      }
+    }
+  
+    function handleFocus() {
+      console.log('🎯 App recebeu foco — recarregando visitas');
+      loadVisitas(user.id);
+    }
+  
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+  
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [user]);
+  
   
 
   // Função para carregar visitas do técnico
