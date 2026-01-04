@@ -49,3 +49,26 @@ body {
 .ring-primary {
   --tw-ring-color: #008B1C;
 }
+
+/* Prevenir zoom automático no mobile */
+input[type="email"],
+input[type="password"],
+input[type="text"],
+input[type="tel"],
+input[type="number"],
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+@media (min-width: 640px) {
+  input[type="email"],
+  input[type="password"],
+  input[type="text"],
+  input[type="tel"],
+  input[type="number"],
+  textarea,
+  select {
+    font-size: inherit;
+  }
+}
