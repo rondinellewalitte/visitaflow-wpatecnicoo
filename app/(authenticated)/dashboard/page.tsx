@@ -222,17 +222,10 @@ export default function DashboardPage() {
   function translateVisitType(visitType: string): string {
     const typeMap: Record<string, string> = {
       'installation': 'Instalação',
-      'instalacao': 'Instalação',
       'maintenance': 'Manutenção',
-      'manutencao': 'Manutenção',
-      'repair': 'Reparo',
-      'reparo': 'Reparo',
-      'inspection': 'Inspeção',
-      'inspecao': 'Inspeção',
       'delivery': 'Entrega',
-      'entrega': 'Entrega',
-      'consultation': 'Consulta',
-      'consulta': 'Consulta',
+      'inspection': 'Visita Técnica',
+      'equipment_pickup': 'Buscar Equipamento',
     };
     return typeMap[visitType.toLowerCase()] || visitType;
   }
