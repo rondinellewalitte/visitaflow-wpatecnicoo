@@ -46,6 +46,52 @@ export default function DashboardPage() {
     loadUserAndVisitas();
   }, []);
 
+  useEffect(() => {
+    if (!user) return;
+  
+    let channel: any;
+  
+    async function setupRealtime() {
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+  
+      if (!employee) return;
+  
+      channel = supabase
+        .channel(`visits-tech-${employee.id}`)
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // INSERT | UPDATE
+            schema: 'public',
+            table: 'visits',
+          },
+          (payload) => {
+            const newVisit = payload.new as any;
+  
+            // Só reage se a visita for do técnico
+            if (newVisit?.assigned_to === employee.id) {
+              console.log('🔄 Realtime update', payload);
+              loadVisitas(user.id);
+            }
+          }
+        )
+        .subscribe();
+    }
+  
+    setupRealtime();
+  
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [user]);
+  
+
   // Função para carregar visitas do técnico
   async function loadVisitas(userId: string) {
     try {
