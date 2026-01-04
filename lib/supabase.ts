@@ -12,11 +12,27 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
+// Helper para obter storage (localStorage quando disponível, caso contrário memory)
+function getStorage() {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    return window.localStorage;
+  }
+  // Fallback para memória quando localStorage não está disponível
+  return {
+    getItem: () => null,
+    setItem: () => {},
+    removeItem: () => {},
+  };
+}
+
 // Cliente Supabase singleton para uso no cliente
+// Configurado para persistir sessão no localStorage e restaurar automaticamente
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storage: getStorage(),
   },
 });
 

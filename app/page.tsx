@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { signIn } from '@/lib/auth';
+import { signIn, hasValidSession } from '@/lib/auth';
 
 // Schema de validação com Zod
 const loginSchema = z.object({
@@ -25,6 +25,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -34,6 +35,27 @@ export default function LoginPage() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema as any),
   });
+
+  // Verificar se já existe sessão válida ao carregar a página
+  useEffect(() => {
+    async function checkExistingSession() {
+      try {
+        const hasSession = await hasValidSession();
+        if (hasSession) {
+          // Sessão válida encontrada, redirecionar para dashboard
+          router.push('/dashboard');
+          router.refresh();
+          return;
+        }
+      } catch (err) {
+        console.error('Erro ao verificar sessão:', err);
+      } finally {
+        setCheckingSession(false);
+      }
+    }
+
+    checkExistingSession();
+  }, [router]);
 
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
@@ -58,6 +80,17 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Mostrar loading enquanto verifica sessão existente
+  if (checkingSession) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-zinc-50 dark:bg-black">
+        <div className="text-center">
+          <p className="text-zinc-600 dark:text-zinc-400">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen items-center justify-center bg-zinc-50 dark:bg-black px-3 sm:px-4 py-4 sm:py-8 overflow-hidden">
