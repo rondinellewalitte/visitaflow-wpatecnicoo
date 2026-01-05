@@ -15,15 +15,24 @@ interface Visita {
   visit_type: string;
   scheduled_date: string;
   assigned_to: string;
+  created_by: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// Tipo para o usuário criador
+interface UsuarioCriador {
+  id: string;
+  email: string;
+  name?: string;
 }
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [visitas, setVisitas] = useState<Visita[]>([]);
+  const [criadores, setCriadores] = useState<Record<string, UsuarioCriador>>({});
   const [error, setError] = useState<string | null>(null);
   const [loadingVisitas, setLoadingVisitas] = useState(true);
 
@@ -152,6 +161,34 @@ export default function DashboardPage() {
       }
 
       setVisitas(data || []);
+
+      // Buscar dados dos usuários criadores
+      if (data && data.length > 0) {
+        const createdByIds = data
+          .map(v => v.created_by)
+          .filter((id): id is string => id !== null && id !== undefined);
+        
+        const uniqueIds = [...new Set(createdByIds)];
+        
+        if (uniqueIds.length > 0) {
+          const criadoresMap: Record<string, UsuarioCriador> = {};
+          
+          // Buscar dados dos usuários através de uma API route
+          for (const userId of uniqueIds) {
+            try {
+              const response = await fetch(`/api/users/${userId}`);
+              if (response.ok) {
+                const userData = await response.json();
+                criadoresMap[userId] = userData;
+              }
+            } catch (err) {
+              console.error(`Erro ao buscar usuário ${userId}:`, err);
+            }
+          }
+          
+          setCriadores(criadoresMap);
+        }
+      }
     } catch (err: any) {
       console.error('Erro ao carregar visitas:', err);
       setError(err.message || 'Erro ao carregar visitas');
@@ -407,6 +444,34 @@ export default function DashboardPage() {
                         Ver localização na visita
                       </span>
                     </div>
+
+                    {/* Criado por */}
+                    {visita.created_by && criadores[visita.created_by] && (
+                      <div className="flex items-center gap-2 pt-2">
+                        <svg
+                          className="w-4 h-4 text-zinc-500 dark:text-zinc-400 flex-shrink-0"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide">
+                            Criado por
+                          </span>
+                          <span className="text-xs text-zinc-700 dark:text-zinc-300 font-medium">
+                            {criadores[visita.created_by].name || criadores[visita.created_by].email}
+                          </span>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Descrição (se houver) */}
                     {visita.description && (

@@ -15,6 +15,7 @@ interface Visita {
   visit_type: string;
   scheduled_date: string;
   assigned_to: string;
+  created_by: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -27,6 +28,13 @@ interface Cliente {
   name: string;
 }
 
+// Tipo para o usuário criador
+interface UsuarioCriador {
+  id: string;
+  email: string;
+  name?: string;
+}
+
 export default function VisitDetailPage() {
   const router = useRouter();
   const params = useParams();
@@ -34,6 +42,7 @@ export default function VisitDetailPage() {
 
   const [visita, setVisita] = useState<Visita | null>(null);
   const [cliente, setCliente] = useState<Cliente | null>(null);
+  const [criador, setCriador] = useState<UsuarioCriador | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [completing, setCompleting] = useState(false);
@@ -110,6 +119,19 @@ export default function VisitDetailPage() {
 
         if (!clienteError && clienteData) {
           setCliente(clienteData);
+        }
+      }
+
+      // Buscar dados do usuário criador
+      if (visitaData.created_by) {
+        try {
+          const response = await fetch(`/api/users/${visitaData.created_by}`);
+          if (response.ok) {
+            const userData = await response.json();
+            setCriador(userData);
+          }
+        } catch (err) {
+          console.error('Erro ao buscar usuário criador:', err);
         }
       }
     } catch (err: any) {
@@ -456,6 +478,34 @@ export default function VisitDetailPage() {
                 <p className="text-sm sm:text-base text-zinc-900 dark:text-zinc-50 whitespace-pre-wrap leading-relaxed">
                   {visita.description}
                 </p>
+              </div>
+            )}
+
+            {/* Criado por */}
+            {criador && (
+              <div>
+                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 uppercase tracking-wide block mb-1.5 sm:mb-2">
+                  Criado por
+                </span>
+                <div className="flex items-center gap-2">
+                  <svg
+                    className="w-4 h-4 sm:w-5 sm:h-5 text-zinc-500 dark:text-zinc-400 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                  <span className="text-sm sm:text-base font-medium text-zinc-900 dark:text-zinc-50">
+                    {criador.name || criador.email}
+                  </span>
+                </div>
               </div>
             )}
 
