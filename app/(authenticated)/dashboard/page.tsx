@@ -61,12 +61,19 @@ export default function DashboardPage() {
     let channel: any;
   
     async function setupRealtime() {
-      const { data: employee } = await supabase
+      const { data: employees, error: employeeError } = await supabase
         .from('employees')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .limit(1);
   
+      // Se houver erro e não for PGRST116, ou se não houver employee, retorna
+      if (employeeError && employeeError.code !== 'PGRST116') {
+        console.error('Erro ao buscar employee para realtime:', employeeError);
+        return;
+      }
+  
+      const employee = employees && employees.length > 0 ? employees[0] : null;
       if (!employee) return;
   
       channel = supabase
@@ -133,15 +140,20 @@ export default function DashboardPage() {
       setError(null);
 
       // Primeiro, buscar o employee pelo user_id
-      const { data: employee, error: employeeError } = await supabase
+      const { data: employees, error: employeeError } = await supabase
         .from('employees')
         .select('id')
         .eq('user_id', userId)
-        .single();
+        .limit(1);
 
       if (employeeError) {
-        throw employeeError;
+        // Se o erro for PGRST116 (nenhum resultado), não é um erro real
+        if (employeeError.code !== 'PGRST116') {
+          throw employeeError;
+        }
       }
+
+      const employee = employees && employees.length > 0 ? employees[0] : null;
 
       if (!employee) {
         setVisitas([]);
@@ -191,6 +203,11 @@ export default function DashboardPage() {
       }
     } catch (err: any) {
       console.error('Erro ao carregar visitas:', err);
+      // Se o erro for PGRST116 (nenhum resultado), apenas retorna lista vazia
+      if (err.code === 'PGRST116') {
+        setVisitas([]);
+        return;
+      }
       setError(err.message || 'Erro ao carregar visitas');
     } finally {
       setLoadingVisitas(false);
@@ -313,9 +330,32 @@ export default function DashboardPage() {
     <>
       {/* Conteúdo */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h2 className="text-xl font-semibold text-black dark:text-zinc-50 mb-6">
-          Minhas Visitas
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-black dark:text-zinc-50">
+            Minhas Visitas
+          </h2>
+          <button
+            onClick={() => router.push('/dashboard/visit/new')}
+            className="flex items-center gap-2 px-4 py-2 bg-[#008B1C] hover:bg-[#006B15] text-white font-medium rounded-lg transition-colors"
+            title="Criar nova visita"
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            <span className="hidden sm:inline">Nova Visita</span>
+          </button>
+        </div>
 
         {/* Erro */}
         {error && (
